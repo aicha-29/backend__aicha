@@ -15,7 +15,7 @@ const {
 exports.getAllEmployeesWithProjects = async (req, res) => {
   try {
     const employees = await User.find({ role: "employee" })
-      .select("name position profilePhoto profilePhotoThumb email cin") // Ajout de profilePhotoThumb
+      .select("name position profilePhoto profilePhotoThumb email cin ") // Ajout de profilePhotoThumb
       .lean();
 
     const employeesWithProjects = await Promise.all(
@@ -59,7 +59,7 @@ exports.getEmployeeDetails = async (req, res) => {
 
     // Récupérer les détails de l'employé
     const employee = await User.findById(employeeId)
-      .select("name position email cin profilePhoto profilePhotoThumb")
+      .select("name position email cin profilePhoto profilePhotoThumb role")
       .lean();
 
     if (!employee) {

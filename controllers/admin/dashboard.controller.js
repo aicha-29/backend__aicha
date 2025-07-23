@@ -215,6 +215,7 @@ exports.getStats = async (req, res) => {
         photo: activity.assignedTo?.profilePhoto,
         position: activity.assignedTo?.position
       },
+      intervention:activity.intervention,
       deadline: activity.deadline
     }));
 
@@ -230,6 +231,7 @@ exports.getStats = async (req, res) => {
         photo: task.assignedTo?.profilePhoto,
         position: task.assignedTo?.position
       },
+      intervention:task.intervention,
       deadline: task.deadline,
       daysLate: Math.floor((today - task.deadline) / (1000 * 60 * 60 * 24))
     }));
