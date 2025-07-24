@@ -45,7 +45,7 @@ const seedDatabase = async () => {
         name: "Ahmed Khan",
         email: "ahmed@entreprise.com",
         password: "password123",
-        role: "employee",
+        role: "manager",
         position: "Développeur Backend",
         cin: "A345678",
         profilePhoto: "uploads/users/originals/test_image.png",

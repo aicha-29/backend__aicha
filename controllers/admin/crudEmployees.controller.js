@@ -14,7 +14,10 @@ const {
 
 exports.getAllEmployeesWithProjects = async (req, res) => {
   try {
-    const employees = await User.find({ role: "employee" })
+    const employees = await User.find({  $or: [
+    { role: "employee" },
+    { role: "manager" }
+  ]})
       .select("name position profilePhoto profilePhotoThumb email cin ") // Ajout de profilePhotoThumb
       .lean();
 
@@ -178,8 +181,6 @@ exports.createEmployee = async (req, res) => {
     });
   }
 };
-
-
 exports.deleteEmployee = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -265,7 +266,6 @@ exports.deleteEmployee = async (req, res) => {
   }
 };
 
-
 exports.updateEmployee = asyncHandler(async (req, res) => {
   const employee = await User.findById(req.params.id);
   if (!employee) {
@@ -343,10 +343,8 @@ exports.resetPassword = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Employé non trouvé" });
   }
 
-  // Hash du nouveau mot de passe
-  //const salt = await bcrypt.genSalt(10);
-  //const hashedPassword = await bcrypt.hash(newPassword, salt);
-  //employee.password = hashedPassword;
+  employee.password=newPassword;
+
   await employee.save();
 
   res.status(200).json({
@@ -354,43 +352,3 @@ exports.resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
-/*
-exports.updateEmployee = asyncHandler(async (req, res) => {
-  const employee = await User.findById(req.params.id);
-  if (!employee) {
-    return res.status(404).json({ message: "Employé non trouvé" });
-  }
-
-  // Préparer les updates
-  const updates = {
-    name: req.body.name || employee.name,
-    email: req.body.email || employee.email,
-    position: req.body.position || employee.position,
-    cin: req.body.cin || employee.cin,
-    role: req.body.role || employee.role,
-    removePhoto: req.body.removePhoto === "true" ? true : false,
-  };
-  console.log("updates", req.body.removePhoto);
-  // Gestion de la photo
-  if (req.file?.profilePhoto) {
-    // Utiliser directement le chemin du middleware
-    updates.profilePhoto = req.file.profilePhoto;
-    updates.profilePhotoThumb = req.file.profilePhotoThumb;
-  } else if (req.body.removePhoto === "true") {
-    updates.profilePhoto = null;
-    updates.profilePhotoThumb = null;
-  }
-
-  // Mise à jour
-  const updatedEmployee = await User.findByIdAndUpdate(req.params.id, updates, {
-    new: true,
-  }).select("-password");
-
-  // Préparer la réponse sans reconstruire l'URL
-  const response = updatedEmployee.toObject();
-
-  res.status(200).json({
-    message: "Employé mis à jour avec succès",
-    employee: response,
-  });
-});*/

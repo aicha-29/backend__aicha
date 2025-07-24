@@ -78,7 +78,10 @@ exports.createProject = async (req, res) => {
         if (assignedEmployeesCINs?.length > 0) {
           const employees = await User.find({
             cin: { $in: assignedEmployeesCINs },
-            role: "employee",
+             $or: [
+              { role: "employee" },
+              { role: "manager" }
+            ]
           }).select("_id cin");
 
           if (employees.length !== assignedEmployeesCINs.length) {
@@ -251,8 +254,8 @@ exports.updateProject = async (req, res) => {
       return res.status(404).json({ success: false, message: "Projet non trouvé" });
     }
 
-    const oldLogo = path.join("public", project.logo || "");
-    const oldThumbnail = path.join("public",project.thumbnail || "");
+    const oldLogo =  project.logo?path.join("public", project.logo) :null;
+    const oldThumbnail = project.thumbnail?path.join("public",project.thumbnail):null;
 
     // Mise à jour des champs
     project.name = name || project.name;

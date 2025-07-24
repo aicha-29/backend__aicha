@@ -57,15 +57,7 @@ router.delete(
   employeesController.deleteEmployee
 );
 
-// POST /api/employees/update/:id
-// router.post(
-//   "/update/:id",
-//   authMiddleware,
-//   roleMiddleware.roleMiddleware("admin"),
-//   uploadUserPhoto,
-//   processUserPhoto,
-//   employeesController.updateEmployee
-// );
+
 router.post(
   "/update/:id",
   authMiddleware,
@@ -81,5 +73,12 @@ router.post(
   processUserPhoto,
   employeesController.updateEmployee
 );
+
+router.put('/resetPassword/:id',
+  authMiddleware,
+  roleMiddleware.roleMiddleware("admin"),
+  employeesController.resetPassword
+)
+
 module.exports = router;
 

@@ -5,7 +5,8 @@ exports.getProfile = async (req, res) => {
   try {
     // L'utilisateur est déjà authentifié par le middleware
     const user = req.user;
-    
+    const baseUrl = `${req.protocol}://${req.get("host")}/public/`;
+
     // Structure de réponse sécurisée
     const profileData = {
       name: user.name,
@@ -13,7 +14,7 @@ exports.getProfile = async (req, res) => {
       role: user.role,
       position: user.position,
       cin: user.cin,
-      profilePhoto: user.profilePhoto || 'default-avatar.png'
+      profilePhoto: baseUrl+user.profilePhoto || 'default-avatar.png'
     };
 
     res.status(200).json({
