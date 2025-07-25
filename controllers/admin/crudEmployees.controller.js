@@ -18,7 +18,7 @@ exports.getAllEmployeesWithProjects = async (req, res) => {
     { role: "employee" },
     { role: "manager" }
   ]})
-      .select("name position profilePhoto profilePhotoThumb email cin ") // Ajout de profilePhotoThumb
+      .select("name position profilePhoto profilePhotoThumb email cin role ") // Ajout de profilePhotoThumb
       .lean();
 
     const employeesWithProjects = await Promise.all(

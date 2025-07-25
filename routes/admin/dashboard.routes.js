@@ -6,7 +6,7 @@ const dashboardController = require('../../controllers/admin/dashboard.controlle
 
 router.get('/stats', 
   authMiddleware,
-  roleMiddleware.roleMiddleware('admin'),
+  roleMiddleware.roleMiddleware('admin','manager'),
   dashboardController.getStats
 );
 

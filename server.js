@@ -10,7 +10,7 @@ const profileRoutes = require('./routes/profile.routes');
 const projectRoutes = require('./routes/admin/crudProjet.routes');
 const tasksRoutes=require('./routes/admin/crudTasks.routes');
 const employeesRoutes = require('./routes/admin/crudEmployees.routes');
-
+const employeDashboard=require('./routes/employee/dashboard_employee.routes');
 
 
 
@@ -30,6 +30,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/admin/projects', projectRoutes);//aussi pour ajouter un projet 
 app.use('/api/admin/employees', employeesRoutes);
 app.use('/api/admin/tasks',tasksRoutes);
+app.use('/api/employee',employeDashboard);
 app.use('/public', express.static('public'));
 
 const PORT = process.env.PORT || 5000;

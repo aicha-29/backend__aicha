@@ -64,8 +64,13 @@ taskSchema.post('save', async function(task) {
       // Récupère TOUTES les tâches du projet pour calcul précis
       const tasks = await mongoose.model('Task').find({ project: task.project });
       const completedCount = tasks.filter(t => t.status === 'completed').length;
-      
+    if (tasks.length > 0) {
+      const completedCount = tasks.filter(t => t.status === 'completed').length;
       project.progression = Math.round((completedCount / tasks.length) * 100);
+    } else {
+      project.progression = 0;
+    }
+
       
       // Mise à jour automatique du statut
       if (project.progression === 100) {
