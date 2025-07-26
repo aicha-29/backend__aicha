@@ -12,10 +12,10 @@ router.get('/',authMiddleware,
   roleMiddleware.roleMiddleware('admin','manager') ,
   tasksCrud.createTask);
 
-router.put("/update/:id",authMiddleware,
+/*router.put("/update/:id",authMiddleware,
    roleMiddleware.roleMiddleware('admin','manager'),
    tasksCrud.updateTask
-);
+);*/
 
 router.put("/update/:id",authMiddleware,
    roleMiddleware.roleMiddleware('admin','manager'),

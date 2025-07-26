@@ -255,9 +255,9 @@ exports.updateTask = async (req, res) => {
     if (type) task.type = type;
     if (status) task.status = status;
     if (deadline) task.deadline = deadline;
-    if (projectId) task.project = projectId;
+    if (projectId){task.project = projectId };
     if (assignedToId !== undefined) {
-      task.assignedTo = assignedToId || null; // Permet de désassigner en envoyant null
+      task.assignedTo = assignedToId  ; // Permet de désassigner en envoyant null
     }
     if (progress !== undefined) task.progress = progress;
     if (intervention) task.intervention = intervention;

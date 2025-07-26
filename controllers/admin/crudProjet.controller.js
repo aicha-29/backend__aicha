@@ -1,6 +1,8 @@
 const Project = require("../../models/project");
 const User = require("../../models/user");
 const Task = require("../../models/task");
+const mongoose = require("mongoose");
+
 const {
   uploadProjectLogo: upload,
   processProjectLogo: processImage,
@@ -136,8 +138,8 @@ exports.getAllProjectsForCards = async (req, res) => {
     const projects = await Project.find()
       .populate({
         path: "assignedEmployees",
-        select: "  profilePhoto profilePhotoThumb name position cin email",
-        match: { role: "employee" },
+        select: " _id profilePhoto profilePhotoThumb name position cin email",
+        match: { role: { $in: ["employee", "manager"] } },
       })
       .select(
         "name logo  thumbnail city priority status progression company description startDate endDate assignedEmployees"
@@ -154,6 +156,7 @@ exports.getAllProjectsForCards = async (req, res) => {
         thumbnailUrl,
         assignedEmployees:
           project.assignedEmployees?.map((emp) => ({
+            _id:emp._id,
             name: emp.name,
             position: emp.position,
             profilePhoto: emp.profilePhoto
@@ -180,9 +183,9 @@ exports.getProjectDetails = async (req, res) => {
     const project = await Project.findById(req.params.id)
       .populate({
         path: "assignedEmployees",
-        select: "name profilePhoto profilePhotoThumb position cin email",
-        match: { role: "employee" },
-      })
+        select: " _id name profilePhoto profilePhotoThumb position cin email",
+          match: { role: { $in: ["employee", "manager"] } },
+              })
       .select("-__v -createdAt")
       .lean();
 
@@ -230,9 +233,6 @@ exports.getProjectDetails = async (req, res) => {
 
 
 
-
-
-
 exports.updateProject = async (req, res) => {
   try {
     const { id } = req.params;
@@ -244,9 +244,19 @@ exports.updateProject = async (req, res) => {
       endDate,
       status,
       priority,
-      assignedEmployeesCINs,
       removeLogo,
     } = req.body;
+
+    let assignedEmployeesIds = req.body.assignedEmployeesIds;
+
+    // Conversion en tableau si string
+    if (typeof assignedEmployeesIds === "string") {
+      assignedEmployeesIds = [assignedEmployeesIds];
+    }
+    // Forcer tableau vide si autre chose
+    if (!Array.isArray(assignedEmployeesIds)) {
+      assignedEmployeesIds = [];
+    }
 
     const project = await Project.findById(id);
     if (!project) {
@@ -254,8 +264,8 @@ exports.updateProject = async (req, res) => {
       return res.status(404).json({ success: false, message: "Projet non trouvé" });
     }
 
-    const oldLogo =  project.logo?path.join("public", project.logo) :null;
-    const oldThumbnail = project.thumbnail?path.join("public",project.thumbnail):null;
+    const oldLogo = project.logo ? path.join("public", project.logo) : null;
+    const oldThumbnail = project.thumbnail ? path.join("public", project.thumbnail) : null;
 
     // Mise à jour des champs
     project.name = name || project.name;
@@ -265,43 +275,60 @@ exports.updateProject = async (req, res) => {
     project.endDate = endDate || project.endDate;
     project.status = status || project.status;
     project.priority = priority || project.priority;
-    project.updatedAt=new Date();
+    project.updatedAt = new Date();
 
     // Gestion du logo
     if (removeLogo === "true" && project.logo) {
       if (fs.existsSync(oldLogo)) fs.unlinkSync(oldLogo);
       if (fs.existsSync(oldThumbnail)) fs.unlinkSync(oldThumbnail);
       project.logo = null;
+      project.thumbnail = null;
     } else if (req.file?.logoPath) {
-       if (fs.existsSync(oldLogo)) fs.unlinkSync(oldLogo);
+      if (fs.existsSync(oldLogo)) fs.unlinkSync(oldLogo);
       if (fs.existsSync(oldThumbnail)) fs.unlinkSync(oldThumbnail);
-       project.logo = req.file.logoPath;
-       project.thumbnail = req.file.thumbnail; 
+      project.logo = req.file.logoPath;
+      project.thumbnail = req.file.thumbnail;
     }
 
-    // Vérification des employés assignés
-    if (assignedEmployeesCINs !== undefined) {
-      if (assignedEmployeesCINs.length > 0) {
-        const assignedCINs = assignedEmployeesCINs.map((cin) => cin.toString());
+    // Validation et nettoyage des assignedEmployeesIds
+    if (assignedEmployeesIds !== undefined) {
+      if (assignedEmployeesIds.length > 0) {
+        // Nettoyer les IDs invalides (null, undefined, chaîne vide)
+        const cleanedEmployeeIds = assignedEmployeesIds
+          .filter(id => id)
+          .filter(id => mongoose.Types.ObjectId.isValid(id));
 
-        const employees = await User.find({
-          cin: { $in: assignedCINs },
-          role: "employee",
-        }).select("_id cin");
-
-        const foundCINs = employees.map((emp) => emp.cin.toString());
-        const missingCINs = assignedCINs.filter((cin) => !foundCINs.includes(cin));
-
-        if (missingCINs.length > 0) {
+        if (cleanedEmployeeIds.length !== assignedEmployeesIds.length) {
           if (req.file) fs.unlinkSync(req.file.path);
-          return res.status(404).json({
+          return res.status(400).json({
             success: false,
-            message: "Certains employés n'existent pas",
-            missingCINs,
+            message: "Certains IDs employés assignés sont invalides",
           });
         }
 
-        project.assignedEmployees = employees.map((emp) => emp._id);
+        // Rechercher les employés avec les rôles acceptés
+        const employees = await User.find({
+          _id: { $in: cleanedEmployeeIds },
+          $or: [
+              { role: "employee" },
+              { role: "manager" }
+            ]
+     // role: { $in: ["employee", "manager"] },
+        })    .select("_id");
+
+        const foundIds = employees.map(emp => emp._id.toString());
+        const missingIds = cleanedEmployeeIds.filter(id => !foundIds.includes(id));
+
+        if (missingIds.length > 0) {
+          if (req.file) fs.unlinkSync(req.file.path);
+          return res.status(404).json({
+            success: false,
+            message: "Certains utilisateurs assignés n'existent pas ou n'ont pas un rôle valide",
+            missingIds,
+          });
+        }
+
+        project.assignedEmployees = employees.map(emp => emp._id);
       } else {
         project.assignedEmployees = [];
       }
@@ -312,8 +339,8 @@ exports.updateProject = async (req, res) => {
     const updatedProject = await Project.findById(id)
       .populate({
         path: "assignedEmployees",
-        select: " name position profilePhoto profilePhotoThumb cin email",
-        match: { role: "employee" },
+        select: "name position profilePhoto profilePhotoThumb cin email",
+        match: { role: { $in: ["employee", "manager"] } },
       })
       .lean();
 
